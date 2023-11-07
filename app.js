@@ -39,11 +39,28 @@ const db = mysql.createConnection({
 
 io.sockets.on('connection', (socket)=>{
   console.log('a user connected', socket.id)
+  
+  
+  socket.on('baatein', (socket)=>{
+      const roomName = `${senderId}-${receiverId}`;
+      socket.join(roomName)
+      socket.to(roomName).emit('user-joined', `${socket.id} has joined the room`);
+  })
+  
+    socket.on('msg', (message) => {
+    console.log('Received private message:', message)
+  });
+  
+  socket.on('baatein', ({ room, message }) => {
+    io.to(room).emit('msg', message);
+  });
 })
+
+
 
 // Define routes and middleware
 app.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.send("");
 });
 
 const login = (callback, data) => {
