@@ -37,7 +37,8 @@ const db = mysql.createConnection({
   password: "root",
   database: "baatein",
 });
-// const io = socketIo(server)
+  const conversation = [
+  ];
 
 io.sockets.on("connection", (socket) => {
   socket.on("disconnect", () => {
@@ -49,29 +50,24 @@ io.sockets.on("connection", (socket) => {
   });
 
   socket.on("abhay", (data) => {
-
-    console.log("abhaycalled",user);
-    loggedInUser = data?.name;
     user.push({ socketId: socket.id, user: data?.name });
-    // broadCaseOnlineUsers();
+    broadCaseOnlineUsers();
   });
-  var counter = 0
+
+  socket.on('private-message', ({socketId, message})=>{
+    // console.log(message, socketId)
+    conversation.push(message)
+    console.log(conversation)
+    io.to(socketId).emit('private-message', {message:conversation })
+    io.to(socket.id).emit('private-message', {message:conversation })
+
+
+  })
   function broadCaseOnlineUsers() {
-    counter++
-    console.log("called", loggedInUser)
-    socket.broadcast.emit("online", user);
-    
-  if (counter == 3) {
-    clearInterval(msg)
-    counter = 0
-  }
+    io.emit("online", user);
   }
 
-  var msg = setInterval(broadCaseOnlineUsers, 13000)
-  console.log("counter called outside", counter)
-
-
-  console.log("Users", user);
+  // console.log("Users", user);
 });
 
 // Define routes and middleware
