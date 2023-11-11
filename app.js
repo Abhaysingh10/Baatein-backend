@@ -1,23 +1,15 @@
 // Import required modules and packages
 const express = require("express");
-const mysql = require("mysql2");
 const app = express();
 const { colours } = require("nodemon/lib/config/defaults");
 const port = 3000; // Set the port
 var cors = require("cors");
 let user = [];
-let loggedInUser;
-// var http = require("http");
-// var server = http.createServer(app);
-// var io = require("socket.io")(server, {
-//   cors:{
-//     origin:"http:localhost:3001",
-//     credentials:false
-//   }
-// });
 
 const { Server } = require("socket.io");
 const { createServer } = require("http");
+const { connected } = require("process");
+const { connectDB, getAllUsers, checkUserExit, addUser, login } = require("./DatabaseConnection/db");
 var server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -30,15 +22,7 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-// Create a connection to the MySQL database
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "root",
-  database: "baatein",
-});
-  const conversation = [
-  ];
+
 
 io.sockets.on("connection", (socket) => {
   socket.on("disconnect", () => {
@@ -66,51 +50,28 @@ io.sockets.on("connection", (socket) => {
   function broadCaseOnlineUsers() {
     io.emit("online", user);
   }
-
-  // console.log("Users", user);
 });
 
-// Define routes and middleware
 app.get("/", (req, res) => {
-  res.send("");
+  res.send("Hello world !");
 });
 
-const login = (callback, data) => {
-  db.query(
-    `select * from users where user_email = "${data?.email}"`,
-    function (err, results, fields) {
-      try {
-        if (err) {
-          callback({ messge: "Internal server error!", code: 500 });
-          return;
-        }
-        if (results.length === 0) {
-          callback({ message: "User not found!", code: 401 });
-          return;
-        }
-        callback({ message: data, code: 200 });
-      } catch (error) {
-        callback({ message: error, code: 500 });
-        return;
-      }
-    }
-  );
-};
+app.post('/add-user', (req, res)=>{
+  addUser((data)=>{
+    const { statusCode, msg } = data
+    res.status(statusCode).send(msg)
+  }, req.body)
+  
+})
+
 
 app.post("/login", (req, res) => {
+  // console.log(req.body)
   login((data) => {
     const { message, code } = data;
     res.status(code).send(message);
   }, req?.body);
 });
-
-const getAllUsers = (callback) => {
-  db.query(`select * from users where first_name = 'willy'`, (err, result) => {
-    if (err) {
-    }
-    callback({ status: 200, data: result });
-  });
-};
 
 app.get("/get-all-users", (req, res) => {
   getAllUsers((data) => {
@@ -118,11 +79,7 @@ app.get("/get-all-users", (req, res) => {
   });
 });
 
-// Start the server
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-  db.connect(function (err) {
-    if (err) throw err;
-    console.log("db connected");
-  });
+  connectDB()
 });
