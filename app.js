@@ -9,7 +9,7 @@ let user = [];
 const { Server } = require("socket.io");
 const { createServer } = require("http");
 const { connected } = require("process");
-const { connectDB, getAllUsers, checkUserExit, addUser, login } = require("./DatabaseConnection/db");
+const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo } = require("./DatabaseConnection/db");
 var server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -17,6 +17,8 @@ const io = new Server(server, {
     credentials: false,
   },
 });
+
+const conversation = []
 
 // Middleware for parsing JSON and URL-encoded data
 app.use(express.json());
@@ -33,9 +35,23 @@ io.sockets.on("connection", (socket) => {
     // You can perform any necessary cleanup or actions here.
   });
 
-  socket.on("abhay", (data) => {
-    user.push({ socketId: socket.id, user: data?.name });
-    broadCaseOnlineUsers();
+  socket.on("abhay", async(data) => {
+    
+    
+    
+    const result =  await getUserInfo(data)
+    user.push({ socketId: socket.id, user: result[0] });
+    
+   console.log("result in app.js", result)
+
+    //fetch userinformation
+    
+
+
+
+
+
+    broadCastOnlineUsers();
   });
 
   socket.on('private-message', ({socketId, message})=>{
@@ -47,7 +63,7 @@ io.sockets.on("connection", (socket) => {
 
 
   })
-  function broadCaseOnlineUsers() {
+  function broadCastOnlineUsers() {
     io.emit("online", user);
   }
 });
@@ -58,8 +74,9 @@ app.get("/", (req, res) => {
 
 app.post('/add-user', (req, res)=>{
   addUser((data)=>{
-    const { statusCode, msg } = data
-    res.status(statusCode).send(msg)
+    const { message, code } = data;
+    console.log(data)
+    res.status(code).send(message)
   }, req.body)
   
 })
@@ -78,6 +95,7 @@ app.get("/get-all-users", (req, res) => {
     res.send(data);
   });
 });
+
 
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);

@@ -14,45 +14,48 @@ const connectDB = () => {
   });
 };
 
-const checkUserExit = (data) => { 
-  db.query(`select * from baatein.users where first_name = '${data?.username}'`,(err, result)=>{
-    console.log(result)
-    if (err) {
+const checkUserExit = async (data) => {
+
+  return new Promise((resolve, reject) => {
+    const query = `select * from baatein.users where first_name = '${data?.first_name}'`
+    db.query(query, (err, result) => {
+      if (err) {
         // callback({statusCode: 404,msg: err})
-    }
-        
-    if (result?.length==0) {
-            return false
-            // callback({statusCode:200, msg:"No data found"})
-        }else{
-            return true
-            // callback({statusCode:200, msg:result})
-        }
-    
-  })  
+        reject()
+      }
+      if (result?.length == 0) {
+        resolve(false)
+        // callback({statusCode:200, msg:"No data found"})
+      } else {
+        resolve(true)
+        // callback({statusCode:200, msg:result})
+      }
+
+    })
+  })
 }
 
-const addUser = (callback, data) => {
-    const {first_name, last_name, email, gender, ip_address} = data
-    const query = `insert into baatein.users (first_name, last_name, email, gender) values ('${first_name}', 
-         '${last_name}', '${email}', '${gender}')`
-    console.log("query", query)
-        if(checkUserExit(data)){
-        console.log("in if")
-        callback({statusCode:200,msg:"User already exit !"})
-    }else{
-        db.query(query, (err, result)=>{
-        console.log("result", result)
-                if (!err) {
-                    callback({statusCode:"200", msg:result})
-                }
-                if (err) {
-                    
-                }
-            })
-        console.log("in else",data)
-    }
+const addUser = async (callback, data) => {
+  const { first_name, last_name, email, gender, ip_address, password } = data?.params
+  const query = `insert into baatein.users (first_name, password) values ('${first_name}',
+   '${password}')`
+
+   console.log("query", query)
+
+  if (await checkUserExit(data?.params)) {
+    callback({ message: "User already exit !", code: 204 });
+  } else {
+    db.query(query, (err, result) => {
+      console.log("result in else", result)
+      if (!err) {
+        callback({ statusCode: 200, msg: result })
+      }
+      if (err) {
+
+      }
+    })
   }
+}
 
 const getAllUsers = (callback) => {
   db.query(`select * from users where first_name = 'willy'`, (err, result) => {
@@ -62,8 +65,19 @@ const getAllUsers = (callback) => {
   });
 };
 
+const getUserInfo = (data) => { 
+  const query = `select * from baatein.users where first_name = '${data?.name}'`
+    return new Promise((resolve, reject)=>{
+      db.query(query,(err, result)=>{
+        if (err) {
+          console.log(err)
+        }
+        resolve(result)
+      })
+    }).catch((ex)=>{console.log('ex in getUserInfo')})
+ }
+
 const login = (callback, data) => {
-console.log(data?.params?.first_name)
   db.query(
     `select * from users where first_name = "${data?.params?.first_name}"`,
     function (err, results, fields) {
@@ -85,10 +99,10 @@ console.log(data?.params?.first_name)
   );
 };
 
-const adduser = (data) => {
-  db.query(
-    `insert into users(first_name, last_name, email, gender, ip_address) values`
-  );
-};
 
-module.exports = {getAllUsers, login, adduser, connectDB, checkUserExit, addUser};
+module.exports = { getAllUsers, 
+  login, 
+  connectDB, 
+  checkUserExit, 
+  addUser,
+  getUserInfo };
