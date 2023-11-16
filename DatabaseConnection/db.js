@@ -57,6 +57,17 @@ const addUser = async (callback, data) => {
   }
 }
 
+const addFriend = async (callback, data) => {
+  const {owner_id, friend_id} = data
+  const query = `insert into baatein.friendships (owner_id, friend_id) values ('${owner_id}', '${friend_id}') `
+  db.query(query, (err, result, fields)=>{
+    if (err) {
+      console.log(err)
+    }
+    console.log(result)
+  })
+}
+
 const getAllUsers = (callback) => {
   db.query(`select * from users where first_name = 'willy'`, (err, result) => {
     if (err) {
@@ -90,7 +101,7 @@ const login = (callback, data) => {
           callback({ message: "User not found!", code: 401 });
           return;
         }
-        callback({ message: data, code: 200 });
+        callback({ message: results, code: 200 });
       } catch (error) {
         callback({ message: error, code: 500 });
         return;
@@ -105,4 +116,4 @@ module.exports = { getAllUsers,
   connectDB, 
   checkUserExit, 
   addUser,
-  getUserInfo };
+  getUserInfo, addFriend };

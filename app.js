@@ -9,7 +9,7 @@ let user = [];
 const { Server } = require("socket.io");
 const { createServer } = require("http");
 const { connected } = require("process");
-const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo } = require("./DatabaseConnection/db");
+const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo, addFriend } = require("./DatabaseConnection/db");
 var server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -36,26 +36,12 @@ io.sockets.on("connection", (socket) => {
   });
 
   socket.on("abhay", async(data) => {
-    
-    
-    
     const result =  await getUserInfo(data)
     user.push({ socketId: socket.id, user: result[0] });
-    
-   console.log("result in app.js", result)
-
-    //fetch userinformation
-    
-
-
-
-
-
     broadCastOnlineUsers();
   });
 
   socket.on('private-message', ({socketId, message})=>{
-    // console.log(message, socketId)
     conversation.push(message)
     console.log(conversation)
     io.to(socketId).emit('private-message', {message:conversation })
@@ -81,12 +67,17 @@ app.post('/add-user', (req, res)=>{
   
 })
 
+app.post('/add-friend', (req, res)=>{
+  console.log(req.body)
+  addFriend((data)=>{}, req.body)
+})
+
 
 app.post("/login", (req, res) => {
   // console.log(req.body)
   login((data) => {
     const { message, code } = data;
-    res.status(code).send(message);
+    res.status(code).send(message[0]);
   }, req?.body);
 });
 
