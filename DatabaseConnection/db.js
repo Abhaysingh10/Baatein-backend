@@ -64,7 +64,7 @@ const addFriend = async (callback, data) => {
     if (err) {
       console.log(err)
     }
-    console.log(result)
+    callback({ message: result.info, code: 200 })
   })
 }
 
@@ -75,6 +75,28 @@ const getAllUsers = (callback) => {
     // callback({ status: 200, data: result });
   });
 };
+
+const fetchUserId = (id) =>{
+  return new Promise((resolve, reject)=>{
+    const query = `select * from baatein.users where id = ${id}`
+    db.query(query, (err, result)=>{
+      if (err) {
+      }
+      console.log("result", result)
+    })
+  })
+}
+
+const friendsList = (callback, owner_id) => { 
+    const query = `SELECT friend_id FROM baatein.friendships where owner_id = '${owner_id}';`
+    return new Promise((resolve, reject)=>{
+      db.query(query, (err, result, fields)=>{
+        if (err) {reject(callback({message:err, code: 500}))}
+        resolve(callback({ message: result, code: 200 }))
+
+      })
+    })
+ }
 
 const getUserInfo = (data) => { 
   const query = `select * from baatein.users where first_name = '${data?.name}'`
@@ -110,10 +132,9 @@ const login = (callback, data) => {
   );
 };
 
-
 module.exports = { getAllUsers, 
   login, 
   connectDB, 
   checkUserExit, 
   addUser,
-  getUserInfo, addFriend };
+  getUserInfo, addFriend, friendsList };

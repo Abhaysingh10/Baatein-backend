@@ -9,7 +9,7 @@ let user = [];
 const { Server } = require("socket.io");
 const { createServer } = require("http");
 const { connected } = require("process");
-const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo, addFriend } = require("./DatabaseConnection/db");
+const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo, addFriend, friendsList } = require("./DatabaseConnection/db");
 var server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -68,10 +68,17 @@ app.post('/add-user', (req, res)=>{
 })
 
 app.post('/add-friend', (req, res)=>{
-  console.log(req.body)
-  addFriend((data)=>{}, req.body)
+  addFriend((data)=>{
+    res.status(data?.code).send(data?.message)
+  }, req.body)
 })
 
+app.post('/get-friends-list', (req, res)=>{
+   const {owner_id} = req?.body
+   friendsList((data)=>{
+      res.status(data?.code).send(data?.message)
+   }, owner_id)
+})
 
 app.post("/login", (req, res) => {
   // console.log(req.body)
