@@ -1,11 +1,15 @@
 const express = require("express");
 const mysql = require("mysql2");
+const util = require('util')
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "root",
   database: "baatein",
 });
+const queryAsync = util.promisify(db.query).bind(db)
+
+
 
 const connectDB = () => {
   db.connect(function (err) {
@@ -13,6 +17,38 @@ const connectDB = () => {
     console.log("db connected");
   });
 };
+
+const storeMessage = async (callback, senderID, receiverID, content) => {
+  try {
+    const result = await db.promise().query(`INSERT INTO baatein.messages (senderID, receiverID, content, timestamp) VALUES ('${senderID}', '${receiverID}', '${content}', NOW())`);
+    if (result.affectedRows > 0) {
+      callback( { message: 'Message stored successfully', status: 200 });
+    } else {
+      callback({ message: 'Message could not be stored', status: 500 });
+    }
+  } catch (error) {
+    console.log(error)
+  }
+};
+
+const fetchMessage = async(callback,senderId, receiverId ) => { 
+  console.log(senderId, receiverId)
+  try {
+    const query = `SELECT *
+    FROM baatein.messages
+    WHERE (senderId = ${senderId} AND receiverID = ${receiverId}) OR (senderId = ${receiverId} AND receiverID = ${senderId})
+    ORDER BY MessageID ASC
+    LIMIT 100 OFFSET 0`
+
+    db.promise().query(query).then((result, error)=>{
+      if (error) {}
+      callback({message:result[0], statusCode:200})
+    });
+
+  } catch (error) {
+    
+  }
+ }
 
 const checkUserExit = async (data) => {
 
@@ -137,4 +173,4 @@ module.exports = { getAllUsers,
   connectDB, 
   checkUserExit, 
   addUser,
-  getUserInfo, addFriend, friendsList };
+  getUserInfo, addFriend, friendsList, storeMessage, fetchMessage };

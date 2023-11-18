@@ -9,7 +9,7 @@ let user = [];
 const { Server } = require("socket.io");
 const { createServer } = require("http");
 const { connected } = require("process");
-const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo, addFriend, friendsList } = require("./DatabaseConnection/db");
+const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo, addFriend, friendsList, storeMessage, fetchMessage } = require("./DatabaseConnection/db");
 var server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -42,16 +42,20 @@ io.sockets.on("connection", (socket) => {
   });
 
   socket.on('private-message', ({socketId, message})=>{
+    const {senderId, receiverId, content} = message
     conversation.push(message)
-    console.log(conversation)
+    console.log("conversation")
+    storeMessage(()=>{}, senderId, receiverId, content)
     io.to(socketId).emit('private-message', {message:conversation })
     io.to(socket.id).emit('private-message', {message:conversation })
 
 
   })
+
   function broadCastOnlineUsers() {
     io.emit("online", user);
   }
+
 });
 
 app.get("/", (req, res) => {
@@ -80,6 +84,14 @@ app.post('/get-friends-list', (req, res)=>{
    }, owner_id)
 })
 
+app.post('/fetch-messages',(req, res)=>{
+  const {senderId, receiverId} = req.body
+  fetchMessage((data)=>{
+      res.status(data?.statusCode).send(data?.message)
+  }, senderId, receiverId)  
+
+})
+ 
 app.post("/login", (req, res) => {
   // console.log(req.body)
   login((data) => {
