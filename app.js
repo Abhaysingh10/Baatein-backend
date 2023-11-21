@@ -39,15 +39,15 @@ io.sockets.on("connection", (socket) => {
     const result =  await getUserInfo(data)
     user.push({ socketId: socket.id, user: result[0] });
     broadCastOnlineUsers();
-  });
+  }); 
 
   socket.on('private-message', ({socketId, message})=>{
     const {senderId, receiverId, content} = message
     conversation.push(message)
     console.log("conversation")
     storeMessage(()=>{}, senderId, receiverId, content)
-    io.to(socketId).emit('private-message', {message:conversation })
-    io.to(socket.id).emit('private-message', {message:conversation })
+    socket.to(socketId).emit('private-message-received', {message:message })
+    socket.emit('private-message-received', {message:message })
 
 
   })
