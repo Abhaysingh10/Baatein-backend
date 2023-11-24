@@ -26,34 +26,53 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 
+// Middleware for getting username while handshake
+io.use((socket, next) => {
+  const ownerInfo = socket.handshake.auth.ownerInfo
+  if (!ownerInfo) {
+    return next(new Error("Invalid owner information."))
+  }
+  // console.log("ownerInfo",ownerInfo)
+  socket.ownerInfo = ownerInfo
+  next()
+})
+
+
 io.sockets.on("connection", (socket) => {
+  console.log("user connected", socket.id)
+  const users = [];
+  for (let [id, socket] of io.of("/").sockets) {
+      users.push({
+        userID: id,
+        user: socket.ownerInfo,
+      });
+    broadCastOnlineUsers(users)
+  }
+
+
+    socket.on('private message', async(data)=>{
+    const {content, to, senderId, receiverId} = data
+    await storeMessage(()=>{
+
+      socket.to(to).emit("private-message-received", {
+        content:content,
+        senderId: senderId,
+        receiverID:receiverId
+      });
+    }, senderId, receiverId, content)
+  })
+
+
   socket.on("disconnect", () => {
-    console.log(`User disconnected with ID: ${socket.id}`);
+    console.log("User disconnected", socket.id)
     const socketIdToRemove = socket.id; // Replace with the socketId you want to remove
     const newArray = user.filter((obj) => obj.socketId !== socketIdToRemove);
     user = newArray;
-    // You can perform any necessary cleanup or actions here.
   });
 
-  socket.on("abhay", async(data) => {
-    const result =  await getUserInfo(data)
-    user.push({ socketId: socket.id, user: result[0] });
-    broadCastOnlineUsers();
-  }); 
-
-  socket.on('private-message', ({socketId, message})=>{
-    const {senderId, receiverId, content} = message
-    conversation.push(message)
-    console.log("conversation")
-    storeMessage(()=>{}, senderId, receiverId, content)
-    socket.to(socketId).emit('private-message-received', {message:message })
-    socket.emit('private-message-received', {message:message })
-
-
-  })
-
-  function broadCastOnlineUsers() {
-    io.emit("online", user);
+  function broadCastOnlineUsers(users) {
+    // console.log("users",users)
+    io.emit("connected-users", users);
   }
 
 });

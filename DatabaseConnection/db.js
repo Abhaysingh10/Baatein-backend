@@ -38,7 +38,7 @@ const fetchMessage = async(callback,senderId, receiverId ) => {
     FROM baatein.messages
     WHERE (senderId = ${senderId} AND receiverID = ${receiverId}) OR (senderId = ${receiverId} AND receiverID = ${senderId})
     ORDER BY MessageID ASC
-    LIMIT 100 OFFSET 0`
+    LIMIT 200 OFFSET 0`
 
     db.promise().query(query).then((result, error)=>{
       if (error) {}
@@ -134,8 +134,8 @@ const friendsList = (callback, owner_id) => {
     })
  }
 
-const getUserInfo = (data) => { 
-  const query = `select * from baatein.users where first_name = '${data?.name}'`
+const getUserInfo = async(name) => { 
+  const query = `select * from baatein.users where first_name = '${name}'`
     return new Promise((resolve, reject)=>{
       db.query(query,(err, result)=>{
         if (err) {
