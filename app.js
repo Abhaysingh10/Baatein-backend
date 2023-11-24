@@ -1,16 +1,23 @@
 // Import required modules and packages
 const express = require("express");
 const app = express();
-const { colours } = require("nodemon/lib/config/defaults");
+const Redis = require("ioredis");
+const { 
+  v1: uuidv1,
+  v4: uuidv4,
+} = require('uuid');
 const port = 3000; // Set the port
-var cors = require("cors");
+const cors = require("cors");
+const {InMemorySessionStore} = require('./sessionStore');
+const sessionStore = new InMemorySessionStore()
+
 let user = [];
 
 const { Server } = require("socket.io");
 const { createServer } = require("http");
 const { connected } = require("process");
 const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo, addFriend, friendsList, storeMessage, fetchMessage } = require("./DatabaseConnection/db");
-var server = createServer(app);
+const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3001",
@@ -28,40 +35,75 @@ app.use(cors());
 
 // Middleware for getting username while handshake
 io.use((socket, next) => {
-  const ownerInfo = socket.handshake.auth.ownerInfo
-  if (!ownerInfo) {
+  const sessionID = socket.handshake.auth.sessionID
+  console.log("sessionID", sessionID)
+  if (sessionID) {
+    //find existing sessionID
+    const session = sessionStore.findSession(sessionID)
+    console.log("session", session)
+    if (session) {
+      socket.ownerInfo = session.ownerInfo
+      socket.sessionID = sessionID;
+      socket.userID = session.userID;
+      socket.username = session.username
+      return next()
+    }
+  }
+  
+  
+  const username = socket.handshake.auth.ownerInfo?.first_name
+  if (!username) {
     return next(new Error("Invalid owner information."))
   }
-  // console.log("ownerInfo",ownerInfo)
-  socket.ownerInfo = ownerInfo
+  // socket.ownerInfo = socket.handshake.auth.ownerInfo
+  socket.sessionID = uuidv1()
+  socket.userID = uuidv4()
+  socket.username = username
   next()
 })
 
 
 io.sockets.on("connection", (socket) => {
-  console.log("user connected", socket.id)
+  // Saving session data in session store in backend
+  sessionStore.saveSession(socket.sessionID, {
+    // ownerInfo: socket.ownerInfo,
+    userID: socket.userID,
+    username: socket.username,
+    connected: true,
+  });
+  
+  // Saving the session ID in localStorage frontend
+  socket.emit("session", {
+    sessionID: socket.sessionID,
+    userID: socket.userID,
+  });
+  
+  const allSessionData =  sessionStore.findAllSession()
+  console.log("allSessionData", allSessionData)
+
+// Saving users in an array for frontend to display as online
   const users = [];
   for (let [id, socket] of io.of("/").sockets) {
-      users.push({
-        userID: id,
-        user: socket.ownerInfo,
-      });
+    users.push({
+      userID: id,
+      user: socket.ownerInfo,
+      sessionID: socket.sessionID,
+    });
     broadCastOnlineUsers(users)
   }
 
 
-    socket.on('private message', async(data)=>{
-    const {content, to, senderId, receiverId} = data
-    await storeMessage(()=>{
+  socket.on('private message', async (data) => {
+    const { content, to, senderId, receiverId } = data
+    await storeMessage(() => {
 
       socket.to(to).emit("private-message-received", {
-        content:content,
+        content: content,
         senderId: senderId,
-        receiverID:receiverId
+        receiverID: receiverId
       });
     }, senderId, receiverId, content)
   })
-
 
   socket.on("disconnect", () => {
     console.log("User disconnected", socket.id)
@@ -81,36 +123,36 @@ app.get("/", (req, res) => {
   res.send("Hello world !");
 });
 
-app.post('/add-user', (req, res)=>{
-  addUser((data)=>{
+app.post('/add-user', (req, res) => {
+  addUser((data) => {
     const { message, code } = data;
     console.log(data)
     res.status(code).send(message)
   }, req.body)
-  
+
 })
 
-app.post('/add-friend', (req, res)=>{
-  addFriend((data)=>{
+app.post('/add-friend', (req, res) => {
+  addFriend((data) => {
     res.status(data?.code).send(data?.message)
   }, req.body)
 })
 
-app.post('/get-friends-list', (req, res)=>{
-   const {owner_id} = req?.body
-   friendsList((data)=>{
-      res.status(data?.code).send(data?.message)
-   }, owner_id)
+app.post('/get-friends-list', (req, res) => {
+  const { owner_id } = req?.body
+  friendsList((data) => {
+    res.status(data?.code).send(data?.message)
+  }, owner_id)
 })
 
-app.post('/fetch-messages',(req, res)=>{
-  const {senderId, receiverId} = req.body
-  fetchMessage((data)=>{
-      res.status(data?.statusCode).send(data?.message)
-  }, senderId, receiverId)  
+app.post('/fetch-messages', (req, res) => {
+  const { senderId, receiverId } = req.body
+  fetchMessage((data) => {
+    res.status(data?.statusCode).send(data?.message)
+  }, senderId, receiverId)
 
 })
- 
+
 app.post("/login", (req, res) => {
   // console.log(req.body)
   login((data) => {
