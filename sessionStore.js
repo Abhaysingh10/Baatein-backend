@@ -22,7 +22,7 @@ class InMemorySessionStore extends SessionStore{
     }
 
     findAllSession(){
-        console.log("IN all sessions", this.sessions)
+        // console.log("IN all sessions", this.sessions)
         return [...this.sessions.values()]
     }
 }

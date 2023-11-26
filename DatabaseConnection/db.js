@@ -41,7 +41,7 @@ const fetchMessage = async(callback,senderId, receiverId ) => {
     LIMIT 200 OFFSET 0`
 
     db.promise().query(query).then((result, error)=>{
-      if (error) {}
+      if (error) {callback({message:error, statusCode:500})}
       callback({message:result[0], statusCode:200})
     });
 
