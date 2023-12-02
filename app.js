@@ -48,6 +48,7 @@ io.use((socket, next) => {
     }
   }
   const username = socket.handshake.auth.ownerInfo?.first_name
+  console.log("username",username)
   if (!username) {
     return next(new Error("Invalid owner information."))
   }
@@ -62,6 +63,7 @@ io.use((socket, next) => {
 io.sockets.on("connection", (socket) => {
 
   socket.join(socket.userID)
+  console.log("all sockets", io.allSockets())
   // const {i} = socket
   // Saving session data in session store in backend
   sessionStore.saveSession(socket.sessionID, {
@@ -75,7 +77,9 @@ io.sockets.on("connection", (socket) => {
   socket.emit("session", {
     sessionID: socket.sessionID,
     userID: socket.userID,
-    username: socket.username
+    username: socket.username,
+    ownerInfo:socket.ownerInfo
+
   });
 
   const allSessionData = sessionStore.findAllSession()
@@ -96,14 +100,15 @@ io.sockets.on("connection", (socket) => {
 
 
   socket.on('private message', async (data) => {
-    const { content, to, senderId, receiverId } = data
+    const { content, to, senderId, receiverId, messageType } = data
     await storeMessage(() => {
     }, senderId, receiverId, content)
-    console.log(" to senderId, receiverId", to)
+    console.log(" to senderId, receiverId", messageType)
     socket.to(to).emit("private-message-received", {
       content: content,
       senderId: senderId,
-      receiverID: receiverId
+      receiverID: receiverId,
+      messageType:messageType
     });
   })
 

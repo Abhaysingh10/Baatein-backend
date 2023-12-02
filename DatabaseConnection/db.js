@@ -6,17 +6,15 @@ const db = mysql.createConnection({
   user: "root",
   password: "root",
   database: "baatein",
-});
+})
 const queryAsync = util.promisify(db.query).bind(db)
-
-
 
 const connectDB = () => {
   db.connect(function (err) {
     if (err) throw err;
     console.log("db connected");
   });
-};
+}
 
 const storeMessage = async (callback, senderID, receiverID, content) => {
   try {
@@ -29,7 +27,7 @@ const storeMessage = async (callback, senderID, receiverID, content) => {
   } catch (error) {
     console.log(error)
   }
-};
+}
 
 const fetchMessage = async(callback,senderId, receiverId ) => { 
   console.log(senderId, receiverId)
@@ -40,15 +38,13 @@ const fetchMessage = async(callback,senderId, receiverId ) => {
     ORDER BY MessageID ASC
     LIMIT 200 OFFSET 0`
 
-    db.promise().query(query).then((result, error)=>{
-      if (error) {callback({message:error, statusCode:500})}
-      callback({message:result[0], statusCode:200})
-    });
+    const result = await db.promise().query(query, [senderId, receiverId, receiverId, senderId]);
 
+    callback({ message: result[0], statusCode: 200 });
   } catch (error) {
-    
+    callback({ message: "Internal Server Error", statusCode: 500 });
   }
- }
+}
 
 const checkUserExit = async (data) => {
 
@@ -99,8 +95,10 @@ const addFriend = async (callback, data) => {
   db.query(query, (err, result, fields)=>{
     if (err) {
       console.log(err)
+      callback({ message: 'Error occurred while adding friend', code: 500 });
+    }else{
+      callback({ message: result.info, code: 200 })
     }
-    callback({ message: result.info, code: 200 })
   })
 }
 
@@ -110,7 +108,7 @@ const getAllUsers = (callback) => {
     }
     // callback({ status: 200, data: result });
   });
-};
+}
 
 const fetchUserId = (id) =>{
   return new Promise((resolve, reject)=>{
@@ -132,7 +130,7 @@ const friendsList = (callback, owner_id) => {
 
       })
     })
- }
+}
 
 const getUserInfo = async(name) => { 
   const query = `select * from baatein.users where first_name = '${name}'`
@@ -144,7 +142,7 @@ const getUserInfo = async(name) => {
         resolve(result)
       })
     }).catch((ex)=>{console.log('ex in getUserInfo')})
- }
+}
 
 const login = (callback, data) => {
   db.query(
@@ -166,7 +164,7 @@ const login = (callback, data) => {
       }
     }
   );
-};
+}
 
 module.exports = { getAllUsers, 
   login, 
