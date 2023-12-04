@@ -100,15 +100,16 @@ io.sockets.on("connection", (socket) => {
 
 
   socket.on('private message', async (data) => {
-    const { content, to, senderId, receiverId, messageType } = data
+    const { content, to, senderId, receiverId, messageType, timestamp } = data
     await storeMessage(() => {
     }, senderId, receiverId, content)
-    console.log(" to senderId, receiverId", messageType)
+    console.log(" content",to, senderId, receiverId)
     socket.to(to).emit("private-message-received", {
       content: content,
       senderId: senderId,
       receiverID: receiverId,
-      messageType:messageType
+      messageType:messageType,
+      timestamp:timestamp
     });
   })
 
