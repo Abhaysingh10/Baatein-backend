@@ -119,15 +119,19 @@ io.sockets.on("connection", (socket) => {
     if (isDisconnected) {
       socket.broadcast.emit("user disconnected", socket.userID);
       // update the connection status of the session
-      sessionStore.saveSession(socket.sessionID, {
-        ownerInfo: socket.ownerInfo,
-        userID: socket.userID,
-        username: socket.username,
-        connected: false,
-      });
+      sessionStore.removeSession(socket.sessionID)
+      // sessionStore.saveSession(socket.sessionID, {
+      //   ownerInfo: socket.ownerInfo,
+      //   userID: socket.userID,
+      //   username: socket.username,
+      //   connected: false,
+      // });
       const socketIdToRemove = socket.id; // Replace with the socketId you want to remove
       const newArray = user.filter((obj) => obj.socketId !== socketIdToRemove);
       user = newArray;
+      
+  const allSessionData = sessionStore.findAllSession()
+  console.log("allSessionData in disconnect", allSessionData)
     }
   });
 
@@ -165,10 +169,10 @@ app.post('/get-friends-list', (req, res) => {
 })
 
 app.post('/fetch-messages', (req, res) => {
-  const { senderId, receiverId } = req.body
+  const { senderId, receiverId, limit, offset } = req.body
   fetchMessage((data) => {
-    res.status(data?.statusCode).send(data?.message)
-  }, senderId, receiverId)
+    res.status(data?.statusCode).send(data)
+  }, senderId, receiverId, limit, offset)
 
 })
 

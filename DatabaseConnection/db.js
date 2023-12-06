@@ -29,20 +29,29 @@ const storeMessage = async (callback, senderID, receiverID, content) => {
   }
 }
 
-const fetchMessage = async(callback,senderId, receiverId ) => { 
+
+
+const fetchMessage = async(callback,senderId, receiverId, limit, offset ) => { 
   console.log(senderId, receiverId)
   try {
     const query = `SELECT *
     FROM baatein.messages
     WHERE (senderId = ${senderId} AND receiverID = ${receiverId}) OR (senderId = ${receiverId} AND receiverID = ${senderId})
     ORDER BY MessageID ASC
-    LIMIT 200 OFFSET 0`
+    LIMIT ${limit} OFFSET ${offset}`
 
+    const queryTotalCount = `SELECT *
+    FROM baatein.messages
+    WHERE (senderId = ${senderId} AND receiverID = ${receiverId}) OR (senderId = ${receiverId} AND receiverID = ${senderId})`
     const result = await db.promise().query(query, [senderId, receiverId, receiverId, senderId]);
+    const totalCountResult = await db.promise().query(queryTotalCount, [senderId, receiverId, receiverId, senderId])
 
-    callback({ message: result[0], statusCode: 200 });
+    const totalCount1 = totalCountResult[0].length
+    
+    callback({ statusCode: 200, totalCount: totalCount1, message: result[0]  });
   } catch (error) {
-    callback({ message: "Internal Server Error", statusCode: 500 });
+    console.log("error", error)
+    callback({ message: error, statusCode: 500 });
   }
 }
 
@@ -103,10 +112,10 @@ const addFriend = async (callback, data) => {
 }
 
 const getAllUsers = (callback) => {
-  db.query(`select * from users where first_name = 'willy'`, (err, result) => {
+  db.query(`select * from users`, (err, result) => {
     if (err) {
     }
-    // callback({ status: 200, data: result });
+    callback({ status: 200, totalCount:result.length ,data: result });
   });
 }
 

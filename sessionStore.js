@@ -1,6 +1,7 @@
 class SessionStore{
     findSession(id){}
     saveSession(id, session){}
+    removeSession(id){}
     findAllSession(){}
 }
 
@@ -15,11 +16,14 @@ class InMemorySessionStore extends SessionStore{
     }
 
     saveSession(id, session){
-        // console.log("id", id)
-        // console.log("session in class", session)
-
         return this.sessions.set(id, session)
     }
+
+    removeSession(id){
+        
+        return this.sessions.delete(id)
+    }
+
 
     findAllSession(){
         // console.log("IN all sessions", this.sessions)
