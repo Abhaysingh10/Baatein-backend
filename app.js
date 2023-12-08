@@ -36,6 +36,7 @@ app.use(cors());
 // Middleware for getting username while handshake
 io.use((socket, next) => {
   const sessionID = socket.handshake.auth.sessionID
+  console.log("sessionID",sessionID)
   if (sessionID) {
     //find existing sessionID
     const session = sessionStore.findSession(sessionID)
@@ -63,7 +64,7 @@ io.use((socket, next) => {
 io.sockets.on("connection", (socket) => {
 
   socket.join(socket.userID)
-  console.log("all sockets", io.allSockets())
+  // console.log("all sockets", io.allSockets())
   // const {i} = socket
   // Saving session data in session store in backend
   sessionStore.saveSession(socket.sessionID, {
@@ -119,13 +120,13 @@ io.sockets.on("connection", (socket) => {
     if (isDisconnected) {
       socket.broadcast.emit("user disconnected", socket.userID);
       // update the connection status of the session
-      sessionStore.removeSession(socket.sessionID)
-      // sessionStore.saveSession(socket.sessionID, {
-      //   ownerInfo: socket.ownerInfo,
-      //   userID: socket.userID,
-      //   username: socket.username,
-      //   connected: false,
-      // });
+      // sessionStore.removeSession(socket.sessionID)
+      sessionStore.saveSession(socket.sessionID, {
+        ownerInfo: socket.ownerInfo,
+        userID: socket.userID,
+        username: socket.username,
+        connected: false,
+      });
       const socketIdToRemove = socket.id; // Replace with the socketId you want to remove
       const newArray = user.filter((obj) => obj.socketId !== socketIdToRemove);
       user = newArray;

@@ -29,15 +29,13 @@ const storeMessage = async (callback, senderID, receiverID, content) => {
   }
 }
 
-
-
 const fetchMessage = async(callback,senderId, receiverId, limit, offset ) => { 
   console.log(senderId, receiverId)
   try {
     const query = `SELECT *
     FROM baatein.messages
     WHERE (senderId = ${senderId} AND receiverID = ${receiverId}) OR (senderId = ${receiverId} AND receiverID = ${senderId})
-    ORDER BY MessageID ASC
+    ORDER BY MessageID DESC
     LIMIT ${limit} OFFSET ${offset}`
 
     const queryTotalCount = `SELECT *
