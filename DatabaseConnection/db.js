@@ -35,7 +35,7 @@ const fetchMessage = async(callback,senderId, receiverId, limit, offset ) => {
     const query = `SELECT *
     FROM baatein.messages
     WHERE (senderId = ${senderId} AND receiverID = ${receiverId}) OR (senderId = ${receiverId} AND receiverID = ${senderId})
-    ORDER BY MessageID DESC
+    ORDER BY messageId DESC
     LIMIT ${limit} OFFSET ${offset}`
 
     const queryTotalCount = `SELECT *
@@ -74,8 +74,8 @@ const checkUserExit = async (data) => {
   })
 }
 
-const addUser = async (callback, data) => {
-  const { first_name, last_name, email, gender, ip_address, password } = data?.params
+const   addUser = async (callback, data) => {
+  const { first_name, password } = data.params
   const query = `insert into baatein.users (first_name, password) values ('${first_name}',
    '${password}')`
 
@@ -87,10 +87,10 @@ const addUser = async (callback, data) => {
     db.query(query, (err, result) => {
       console.log("result in else", result)
       if (!err) {
-        callback({ statusCode: 200, msg: result })
+        callback({ statusCode: 200, message: "User added" })
       }
       if (err) {
-
+        console.log("Err", err)
       }
     })
   }

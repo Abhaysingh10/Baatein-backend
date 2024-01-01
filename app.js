@@ -60,7 +60,6 @@ io.use((socket, next) => {
   next()
 })
 
-
 io.sockets.on("connection", (socket) => {
 
   socket.join(socket.userID)
@@ -84,7 +83,6 @@ io.sockets.on("connection", (socket) => {
   });
 
   const allSessionData = sessionStore.findAllSession()
-  console.log("allSessionData", allSessionData)
 
   // Saving users in an array for frontend to display as online
   const users = [];
@@ -114,6 +112,12 @@ io.sockets.on("connection", (socket) => {
     });
   })
 
+  socket.on('offer', async(offer, targetUser) => {
+    console.log("offer", offer)
+    console.log("targetSocketId", targetUser)
+    socket.to(targetUser?.userID).emit('offer', offer, socket.id);
+  });
+
   socket.on("disconnect", async () => {
     const matchingSockets = await io.in(socket.userID).allSockets();
     const isDisconnected = matchingSockets.size === 0;
@@ -132,7 +136,7 @@ io.sockets.on("connection", (socket) => {
       user = newArray;
       
   const allSessionData = sessionStore.findAllSession()
-  console.log("allSessionData in disconnect", allSessionData)
+  // console.log("allSessionData in disconnect", allSessionData)
     }
   });
 
@@ -148,10 +152,11 @@ app.get("/", (req, res) => {
 });
 
 app.post('/add-user', (req, res) => {
+  console.log("req",req.body)
   addUser((data) => {
-    const { message, code } = data;
+    const { message, statusCode } = data;
     console.log(data)
-    res.status(code).send(message)
+    res.status(statusCode).send(message)
   }, req.body)
 
 })
