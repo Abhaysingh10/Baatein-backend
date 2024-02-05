@@ -56,13 +56,13 @@ const fetchMessage = async(callback,senderId, receiverId, limit, offset ) => {
 const checkUserExit = async (data) => {
 
   return new Promise((resolve, reject) => {
-    const query = `select * from baatein.users where first_name = '${data?.first_name}'`
+    const query = `select * from baatein.users where first_name = '${data.first_name}'`
     db.query(query, (err, result) => {
       if (err) {
         // callback({statusCode: 404,msg: err})
         reject()
       }
-      if (result?.length == 0) {
+      if (result.length == 0) {
         resolve(false)
         // callback({statusCode:200, msg:"No data found"})
       } else {
@@ -81,7 +81,7 @@ const   addUser = async (callback, data) => {
 
    console.log("query", query)
 
-  if (await checkUserExit(data?.params)) {
+  if (await checkUserExit(data.params)) {
     callback({ message: "User already exit !", code: 204 });
   } else {
     db.query(query, (err, result) => {
@@ -153,7 +153,7 @@ const getUserInfo = async(name) => {
 
 const login = (callback, data) => {
   db.query(
-    `select * from users where first_name = "${data?.params?.first_name}"`,
+    `select * from users where first_name = "${data.params.first_name}"`,
     function (err, results, fields) {
       try {
         if (err) {
