@@ -48,7 +48,7 @@ io.use((socket, next) => {
       return next()
     }
   }
-  const username = socket.handshake.auth.ownerInfo?.first_name
+  const username = socket.handshake.auth.ownerInfo.first_name
   console.log("username",username)
   if (!username) {
     return next(new Error("Invalid owner information."))
@@ -115,7 +115,7 @@ io.sockets.on("connection", (socket) => {
   socket.on('offer', async(offer, targetUser) => {
     console.log("offer", offer)
     console.log("targetSocketId", targetUser)
-    socket.to(targetUser?.userID).emit('offer', offer, socket.id);
+    socket.to(targetUser.userID).emit('offer', offer, socket.id);
   });
 
   socket.on('offerVideo', data =>{
@@ -177,21 +177,21 @@ app.post('/add-user', (req, res) => {
 
 app.post('/add-friend', (req, res) => {
   addFriend((data) => {
-    res.status(data?.code).send(data?.message)
+    res.status(data.code).send(data.message)
   }, req.body)
 })
 
 app.post('/get-friends-list', (req, res) => {
-  const { owner_id } = req?.body
+  const { owner_id } = req.body
   friendsList((data) => {
-    res.status(data?.code).send(data?.message)
+    res.status(data.code).send(data.message)
   }, owner_id)
 })
 
 app.post('/fetch-messages', (req, res) => {
   const { senderId, receiverId, limit, offset } = req.body
   fetchMessage((data) => {
-    res.status(data?.statusCode).send(data)
+    res.status(data.statusCode).send(data)
   }, senderId, receiverId, limit, offset)
 
 })
@@ -201,7 +201,7 @@ app.post("/login", (req, res) => {
   login((data) => {
     const { message, code } = data;
     res.status(code).send(message[0]);
-  }, req?.body);
+  }, req.body);
 });
 
 app.get("/get-all-users", (req, res) => {
