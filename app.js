@@ -15,7 +15,7 @@ let user = [];
 
 const { Server } = require("socket.io");
 const { createServer } = require("http");
-const { connected } = require("process");
+const { connected, off } = require("process");
 const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo, addFriend, friendsList, storeMessage, fetchMessage } = require("./DatabaseConnection/db");
 const server = createServer(app);
 const io = new Server(server, {
@@ -118,7 +118,21 @@ io.sockets.on("connection", (socket) => {
     socket.to(targetUser?.userID).emit('offer', offer, socket.id);
   });
 
+  socket.on('offerVideo', data =>{
+    const {offer,   recepientSocketId} = data
+    console.log("data recevied after clicking video call", offer)
+    socket.to(recepientSocketId).emit("offerVideo", {"offer": offer})
+  })
+
+   socket.on('answerVideo', data =>{
+    const {offer, sdp,  recepientSocketId, senderSocketId} = data
+    console.log("senderSocketId", senderSocketId)
+  })
+
+  
+
   socket.on("disconnect", async () => {
+    console.log("disconnected !!!!!@@@@!@##₹%")
     const matchingSockets = await io.in(socket.userID).allSockets();
     const isDisconnected = matchingSockets.size === 0;
     if (isDisconnected) {
