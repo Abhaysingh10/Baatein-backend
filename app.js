@@ -48,7 +48,7 @@ io.use((socket, next) => {
       return next()
     }
   }
-  const username = socket.handshake.auth.ownerInfo.first_name
+  const username = socket.handshake.auth.ownerInfo?.first_name
   console.log("username",username)
   if (!username) {
     return next(new Error("Invalid owner information."))
@@ -119,20 +119,31 @@ io.sockets.on("connection", (socket) => {
   });
 
   socket.on('offerVideo', data =>{
-    const {offer,   recepientSocketId} = data
-    console.log("data recevied after clicking video call", offer)
-    socket.to(recepientSocketId).emit("offerVideo", {"offer": offer})
+    const {offer, recepientSocketId, senderSocketId} = data
+    socket.to(recepientSocketId).emit("offerVideo", {"offer": offer, "senderSocketId":senderSocketId})
+  })
+  
+  socket.on('answerVideo', data =>{
+    const {answer,  recepientSocketId, senderSocketId} = data
+    socket.to(senderSocketId).emit("answerVideo", {"answer":answer, "recepientSocketId":recepientSocketId})
   })
 
-   socket.on('answerVideo', data =>{
-    const {offer, sdp,  recepientSocketId, senderSocketId} = data
-    console.log("senderSocketId", senderSocketId)
+  socket.on('candidate', data =>{
+    console.log(data?.recepientSocketId)  
+    socket.to(data?.recepientSocketId).emit('candidate', data?.candidate)
+  })
+  
+  socket.on('addIce', data =>{
+    // console.log(data)
+    const {iceCandidate, recepientSocketId} = data
+    socket.to(recepientSocketId).emit("addIce", {"iceCandidate": iceCandidate})
+
   })
 
   
 
   socket.on("disconnect", async () => {
-    console.log("disconnected !!!!!@@@@!@##₹%")
+    console.log("disconnectesd !!!!!@@@@!@##₹%")
     const matchingSockets = await io.in(socket.userID).allSockets();
     const isDisconnected = matchingSockets.size === 0;
     if (isDisconnected) {
