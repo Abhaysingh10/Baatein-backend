@@ -128,16 +128,17 @@ io.sockets.on("connection", (socket) => {
     socket.to(senderSocketId).emit("answerVideo", {"answer":answer, "recepientSocketId":recepientSocketId})
   })
 
+  const candidatesCollection = [];
+
   socket.on('candidate', data =>{
-    console.log(data?.recepientSocketId)  
-    socket.to(data?.recepientSocketId).emit('candidate', data?.candidate)
+    candidatesCollection.push(data.candidate)
   })
   
   socket.on('addIce', data =>{
-    // console.log(data)
-    const {iceCandidate, recepientSocketId} = data
-    socket.to(recepientSocketId).emit("addIce", {"iceCandidate": iceCandidate})
-
+    const {recepientSocketId, senderSocketId} = data
+    console.log("senderSockerId", senderSocketId)
+    socket.to(recepientSocketId).emit("addIce", {"iceCandidate": candidatesCollection})
+    socket.to(senderSocketId).emit('addIce', {"iceCandidate": candidatesCollection} )
   })
 
   
