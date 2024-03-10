@@ -9,6 +9,7 @@ const {
 const port = 3000; // Set the port
 const cors = require("cors");
 const { InMemorySessionStore } = require('./sessionStore.js');
+const {putObject} = require('./S3/index.js');
 const sessionStore = new InMemorySessionStore()
 
 let user = [];
@@ -17,12 +18,15 @@ const { Server } = require("socket.io");
 const { createServer } = require("http");
 const { connected, off } = require("process");
 const { connectDB, getAllUsers, checkUserExit, addUser, login, getUserInfo, addFriend, friendsList, storeMessage, fetchMessage } = require("./DatabaseConnection/db");
-const server = createServer(app);
+const { default: axios } = require("axios");
+const server = createServer(app); 
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3001",
     credentials: false,
   },
+  maxReceivedFrameSize: 131072,
+  maxReceivedMessageSize: 10 * 1024 * 1024 * 1024
 });
 
 const conversation = []
@@ -99,17 +103,32 @@ io.sockets.on("connection", (socket) => {
 
 
   socket.on('private message', async (data) => {
-    const { content, to, senderId, receiverId, messageType, timestamp } = data
-    await storeMessage(() => {
-    }, senderId, receiverId, content)
-    console.log(" content",to, senderId, receiverId)
-    socket.to(to).emit("private-message-received", {
-      content: content,
-      senderId: senderId,
-      receiverID: receiverId,
-      messageType:messageType,
-      timestamp:timestamp
-    });
+    const { content, fileName, to, senderId, receiverId, messageType, timestamp } = data
+    // console.log("message", messageType, content)
+    if (messageType == 'image') {
+      let url =  await putObject(`baatein-uploads/${fileName}`, 'image/jpg');
+      axios.put(url, content, {
+        headers:{
+          'Content-Type': 'image/jpg'
+        }
+      }).then((res)=>{
+        console.log("response", res.status)
+      })
+    }
+    if (messageType == 'text') {
+      await storeMessage(() => {
+      }, senderId, receiverId,  messageType)
+      console.log(" content", messageType)
+      socket.to(to).emit("private-message-received", {
+        content: content,
+        senderId: senderId,
+        receiverID: receiverId,
+        messageType:messageType,
+        timestamp:timestamp
+      });
+    }
+
+
   })
 
   socket.on('offer', async(offer, targetUser) => {
@@ -131,20 +150,28 @@ io.sockets.on("connection", (socket) => {
   const candidatesCollection = [];
 
   socket.on('candidate', data =>{
+    // console.log("candidates", data)
     candidatesCollection.push(data.candidate)
   })
   
-  socket.on('addIce', data =>{
+  socket.on('addIce', (data) =>{
     const {recepientSocketId, senderSocketId} = data
     console.log("senderSockerId", senderSocketId)
+    console.log("recepientSocketId", recepientSocketId)
+    // socket.to(senderSocketId).emit('addIce', {"iceCandidate": candidatesCollection} )
     socket.to(recepientSocketId).emit("addIce", {"iceCandidate": candidatesCollection})
-    socket.to(senderSocketId).emit('addIce', {"iceCandidate": candidatesCollection} )
+  })
+
+  socket.on('answerIce', data =>{
+    console.log("data", data)
+    const { answerIce, senderSocketId} = data
+    socket.to(senderSocketId).emit('answerIce', answerIce)
   })
 
   
 
   socket.on("disconnect", async () => {
-    console.log("disconnectesd !!!!!@@@@!@##₹%")
+    console.log("disconnected !!")
     const matchingSockets = await io.in(socket.userID).allSockets();
     const isDisconnected = matchingSockets.size === 0;
     if (isDisconnected) {

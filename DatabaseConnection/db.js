@@ -16,9 +16,10 @@ const connectDB = () => {
   });
 }
 
-const storeMessage = async (callback, senderID, receiverID, content) => {
+const storeMessage = async (callback, senderID, receiverID, content, messageType) => {
+  console.log("messageType", messageType)
   try {
-    const result = await db.promise().query(`INSERT INTO baatein.messages (senderID, receiverID, content, timestamp) VALUES ('${senderID}', '${receiverID}', '${content}', NOW())`);
+    const result = await db.promise().query(`INSERT INTO baatein.messages (senderID, receiverID, content, messageType, timestamp) VALUES ('${senderID}', '${receiverID}', '${content}',  '${messageType}', NOW())`);
     if (result.affectedRows > 0) {
       callback( { message: 'Message stored successfully', status: 200 });
     } else {
